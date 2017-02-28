@@ -23,7 +23,12 @@ import com.soundai.soundairecorder.Service.TTSService;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import static android.support.v7.widget.StaggeredGridLayoutManager.TAG;
 
@@ -35,17 +40,25 @@ public class RecordFragment extends Fragment {
 
     private static final String TAG = "SoundAi";
     private static final String ARG_POSITION = "position";
+    public static final String[] ttsTalkingDate =
+            {"帮我查一下福州的飞机票", "最近一个月去马尔代夫的最优惠的票价", "给我放一首刘德华的歌", "明天北京会不会下雨", "今天的雾霾是多少", "帮我订一个全家桶"
+            , "现在几点了", "给我讲一个故事吧", "帮我订明天早上七点的闹钟", "我回来了，帮我把灯打开"};
 
     private int position;
     private int status = 0;
     private boolean isStart = false;
     private boolean isPause = true;
+    private boolean isTTS = false;
     private long whenPause = 0;
 
     private FloatingActionButton recordButton;
     private FloatingActionButton pauseButton;
     private Chronometer mChronometer;
     private TTSService tts;
+    private Random random;
+    private Timer timer;
+    private TTSTimerTask ttsTimerTask;
+    private MusicTimerTask musicTimerTask;
 
     public static RecordFragment newInstance(int position) {
         RecordFragment f = new RecordFragment();
@@ -64,6 +77,10 @@ public class RecordFragment extends Fragment {
         super.onCreate(savedInstanceState);
         position = getArguments().getInt(ARG_POSITION);
         tts = new TTSService(getActivity());
+        random = new Random();
+        timer = new Timer();
+        ttsTimerTask = new TTSTimerTask();
+        musicTimerTask = new MusicTimerTask();
     }
 
     @Nullable
@@ -78,7 +95,6 @@ public class RecordFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 // TODO: 2017/2/22 开始/暂停录音
-                tts.startSpeaking("你好北京明天的天气");
                 if (isStart) {
                     stopRecording();
                 } else {
@@ -87,13 +103,20 @@ public class RecordFragment extends Fragment {
             }
         });
         pauseButton = (FloatingActionButton) recordView.findViewById(R.id.btn_pause);
-        pauseButton.setColorNormal(getResources().getColor(R.color.colorPrimary));
         pauseButton.setColorPressed(getResources().getColor(R.color.colorPrimaryDark));
         pauseButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 // TODO: 2017/2/23 暂停/继续录音
-                pauseRecording();
+                if (!isTTS) {
+                    isTTS = true;
+                    tts.stopPlayMusic();
+                    tts.startSpeaking(ttsTalkingDate[random.nextInt(9)]);
+                } else {
+                    isTTS = false;
+                    tts.stopSpeaking();
+                    tts.startPlayMusic("/sdcard/SAIDownload/十年.mp3");
+                }
             }
         });
         return recordView;
@@ -103,7 +126,6 @@ public class RecordFragment extends Fragment {
         isStart = true;
         isPause = false;
         recordButton.setImageResource(R.mipmap.ic_media_stop);
-        pauseButton.setEnabled(true);
         Toast.makeText(getActivity(), "Recording start", Toast.LENGTH_SHORT).show();
         File folder = new File(Environment.getExternalStorageDirectory().getPath() + "/SoundAiRecorder");
         if (!folder.exists()) {
@@ -129,7 +151,6 @@ public class RecordFragment extends Fragment {
         isStart = false;
         whenPause = 0;
         recordButton.setImageResource(R.mipmap.ic_media_play);
-        pauseButton.setEnabled(false);
         mChronometer.stop();
         mChronometer.setBase(SystemClock.elapsedRealtime());
 
@@ -170,5 +191,25 @@ public class RecordFragment extends Fragment {
         Intent intent = new Intent(getActivity(), RecorderService.class);
         intent.setAction(Action.RESUME_RECORDING);
         getActivity().startService(intent);
+    }
+
+    class TTSTimerTask extends TimerTask {
+        @Override
+        public void run() {
+            tts.stopSpeaking();
+            tts.startPlayMusic("/sdcard/SAIDownload/十年.mp3");
+            timer.schedule(new MusicTimerTask(), 15);
+            Log.e(TAG, "跳出线程");
+        }
+    }
+
+    class MusicTimerTask extends TimerTask {
+        @Override
+        public void run() {
+            tts.stopPlayMusic();
+            tts.startSpeaking(ttsTalkingDate[random.nextInt(9)]);
+            timer.schedule(new TTSTimerTask(), 15);
+            Log.e(TAG, "跳出线程");
+        }
     }
 }

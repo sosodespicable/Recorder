@@ -29,6 +29,7 @@ public class RecorderService extends Service {
 
     private SaiManager mSaiMaManager;
     private DBHelper db;
+    private String fileName;
 
     @Nullable
     @Override
@@ -39,7 +40,14 @@ public class RecorderService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        String SAI_CONFIG = Environment.getDataDirectory().getPath() + "/data/" + RecorderService.this.getPackageName() + "/sai_config";
         mSaiMaManager = SaiManager.getInstance();
+        if (mSaiMaManager.init(SAI_CONFIG) == 1) {
+            Log.d(TAG, "startRecording: init success");
+        } else {
+            Log.e(TAG, "init failed");
+            stopSelf();
+        }
         db = new DBHelper(RecorderService.this);
     }
 
@@ -73,14 +81,8 @@ public class RecorderService extends Service {
     }
 
     private void startRecording(String fileName) {
-        String SAI_CONFIG = Environment.getDataDirectory().getPath() + "/data/" + RecorderService.this.getPackageName() + "/sai_config";
-        db.addItem("soundai.pcm", fileName, 0);
-        if (mSaiMaManager.init(SAI_CONFIG) == 1) {
-            Log.d(TAG, "startRecording: init success");
-            mSaiMaManager.record(Environment.getExternalStorageDirectory().getPath() + "/SoundAiRecorder/" + fileName);
-        } else {
-            Log.e(TAG, "init failed");
-        }
+        db.addItem(fileName, "null", 0);
+        mSaiMaManager.record(Environment.getExternalStorageDirectory().getPath() + "/SoundAiRecorder/" + fileName);
     }
 
     private void stopRecording() {

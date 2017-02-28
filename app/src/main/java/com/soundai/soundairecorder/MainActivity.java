@@ -86,7 +86,7 @@ public class MainActivity extends ActionBarActivity {
 
     public class MainAdapter extends FragmentPagerAdapter {
 
-        private String[] titles = {"Record", "File"};
+        private String[] titles = {"Record"};
 
         public MainAdapter(FragmentManager fm) {
             super(fm);
