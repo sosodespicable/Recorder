@@ -18,27 +18,12 @@ import java.io.InputStream;
  */
 
 public class MainApplication extends Application {
-    static {
-        System.loadLibrary("sai_micbasex");
-        System.loadLibrary("sai_micarray");
-        System.loadLibrary("sai_denoise");
-        System.loadLibrary("SAI_Recorder");
-        System.loadLibrary("msc");
-    }
+
 
     @Override
     public void onCreate() {
         super.onCreate();
-        String rootPath = Environment.getDataDirectory().getPath() + "/data/" + MainApplication.this.getPackageName() + "/sai_config";
-        File file = new File(rootPath);
-        if (!file.exists()) {
-            file.mkdir();
-        }
-        if (!new File(rootPath + "/sai_config.txt").exists()) {
-            copyAsset(MainApplication.this, "sai_config.txt", rootPath + "/sai_config.txt");
-            copyAsset(MainApplication.this, "wopt_5mic.bin", rootPath + "/wopt_5mic.bin");
-        }
-        SpeechUtility.createUtility(this, SpeechConstant.APPID +"=580ed459");
+
     }
 
     private void copyAsset(Context context, String oldPath, String newPath) {
